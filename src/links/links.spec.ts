@@ -41,7 +41,7 @@ describe("LinksAPI", ()=>{
     expect(link.id).toBe(linkId);
   });
 
-  it('/POST links', () => {
+  it('POST /links should return list created', () => {
     return request(host)
       .post('/links')
       .send({
@@ -58,6 +58,22 @@ describe("LinksAPI", ()=>{
         expect(response.body.shortURL).toEqual('http://short.com');
         expect(response.body.path).toEqual('/example');
         expect(response.body.userId).toEqual('user123');
+      });
+  });
+
+  it('POST /links userId should not be empty', () => {
+    return request(host)
+      .post('/links')
+      .send({
+        originalURL: 'http://example.com',
+        shortURL: 'http://short.com',
+        path: '/example',
+        // userId: 'user123',
+      })
+      .expect(400)
+      .expect('Content-Type', /json/)
+      .then(response => {
+        expect(response.body.message[0]).toEqual('userId should not be empty');
       });
   });
 })

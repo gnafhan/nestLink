@@ -1,5 +1,6 @@
-import { Body, Controller, Get, NotFoundException, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { LinksService } from "./links.service";
+import { createLinkDTO } from "./dto/create-link.dto";
 
 @Controller('links')
 export class LinksController {
@@ -15,12 +16,8 @@ export class LinksController {
   }
 
   @Post()
-  postLink(
-    @Body("originalURL") originalURL: string,
-    @Body("shortURL") shortURL: string,
-    @Body("path") path: string,
-    @Body("userId") userId : string
-  ){
-    return this.linksService.postLink(originalURL, shortURL, path, userId)
+  postLink(@Body() createLinkDTO: createLinkDTO){
+
+    return this.linksService.postLink(createLinkDTO)
   }
 }
