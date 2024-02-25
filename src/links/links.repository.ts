@@ -1,7 +1,12 @@
 import { db } from "../lib/firebase";
-import { collection, doc, getDoc, getDocs, query, addDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, addDoc, where, updateDoc, deleteDoc } from 'firebase/firestore';
 import { createLinkDTO } from "./dto/create-link.dto";
-import { InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import {
+  InternalServerErrorException,
+  NotFoundException, UnauthorizedException
+} from "@nestjs/common";
+import { editLinkDTO } from "./dto/edit-link.dto";
+
 
 export class LinkRepository{
   async addLink(createLinkDTO:createLinkDTO){
@@ -57,6 +62,72 @@ export class LinkRepository{
         throw new NotFoundException("data not found")
       }
     } catch (e) {
+      throw new InternalServerErrorException(e)
+    }
+  }
+
+  async getLinkByPath(path: string){
+    try {
+      const docsQuery = query(collection(db, "links"), where("path","==", path ))
+      const docSnap = await getDocs(docsQuery)
+      if (docSnap.empty){
+        return false
+      } else {
+        const docs = []
+        docSnap.forEach(doc => docs.push(doc))
+        return docs[0].data()
+      }
+    }catch (e) {
+      throw new InternalServerErrorException(e)
+    }
+  }
+  
+  async editLinkByPath(id: string, editLinkDTO:editLinkDTO){
+    try {
+      const data:any = await this.getLinkById(id)
+      if (!data){
+        throw new NotFoundException("link not found")
+        return
+      }
+      if (data.userId != editLinkDTO.userId ) throw new UnauthorizedException()
+      const docRef = await doc(db, "links", data.id)
+      await updateDoc(docRef, {originalURL: editLinkDTO.originalURL});
+      return this.getLinkById(id)
+    } catch (e) {
+      throw new InternalServerErrorException(e)
+    }
+  }
+
+  async getLinkUser(user){
+    try {
+      const docsQuery = query(collection(db, "links"), where("userId","==", user.user_id ))
+      const docSnap = await getDocs(docsQuery)
+      if (docSnap.empty){
+        throw new NotFoundException("No data")
+      } else {
+        const docs = []
+        docSnap.forEach(doc => docs.push({ ...doc.data(), id: doc.id }))
+        return docs
+      }
+    }catch (e) {
+      throw new InternalServerErrorException(e)
+    }
+  }
+
+  async deleteLink(id: string, user_id: string){
+    try {
+      const data:any = await this.getLinkById(id)
+      if (!data){
+        throw new NotFoundException("link not found")
+        return
+      }
+      if (data.userId != user_id) throw new UnauthorizedException()
+      const docRef = await doc(db, "links", data.id)
+      await deleteDoc(docRef);
+      return {
+        message: "data deleted successfully"
+      }
+    }catch (e) {
       throw new InternalServerErrorException(e)
     }
   }

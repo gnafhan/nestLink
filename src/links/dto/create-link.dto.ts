@@ -8,6 +8,5 @@ export class createLinkDTO {
   shortURL: string
   @IsNotEmpty()
   path: string
-  @IsNotEmpty()
   userId: string
 }
